@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
+import '../utils/simple_password_validator.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -125,6 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
+                  helperText: 'Mínimo 6 caracteres alfanuméricos con al menos una letra',
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -132,15 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingrese su contraseña';
-                  }
-                  if (value.length < 6) {
-                    return 'La contraseña debe tener al menos 6 caracteres';
-                  }
-                  return null;
-                },
+                validator: SimplePasswordValidator.validatePassword, // ← INTEGRADO AQUÍ
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(

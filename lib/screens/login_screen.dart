@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../utils/simple_password_validator.dart';
 import 'register_screen.dart';
 import 'player_menu_screen.dart';
 import 'club_menu_screen.dart';
@@ -119,15 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         filled: true,
                         fillColor: Colors.white70,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ingrese su contraseña';
-                        }
-                        if (value.length < 6) {
-                          return 'La contraseña debe tener al menos 6 caracteres';
-                        }
-                        return null;
-                      },
+                      validator: SimplePasswordValidator.validatePassword, // ← INTEGRADO AQUÍ
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
