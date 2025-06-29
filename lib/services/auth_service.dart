@@ -3,6 +3,7 @@ import 'user_service.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import '../utils/jwt_utils.dart'; 
 
 class AuthService {
   static const String _tokenKey = 'jwt_token';
@@ -19,6 +20,11 @@ class AuthService {
     return prefs.getString(_tokenKey);
   }
 
+  static Future<String?> getUserType() async {
+  final token = await getToken();
+  if (token == null) return null;
+  return JwtUtils.getUserTypeFromToken(token);
+}
 
   static Future<void> removeToken() async {
     final prefs = await SharedPreferences.getInstance();

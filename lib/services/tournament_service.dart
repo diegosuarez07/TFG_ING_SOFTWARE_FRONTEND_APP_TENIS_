@@ -142,4 +142,23 @@ class TournamentService {
       throw Exception(errorMessage);
     }
   }
+
+  Future<List<Tournament>> getAllTournaments() async {
+  final token = await _getToken();
+  if (token == null) {
+    throw Exception('No se encontró el token de autenticación');
+  }
+  final response = await http.get(
+    Uri.parse(baseUrl),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+  if (response.statusCode == 200) {
+    final List<dynamic> tournamentsJson = jsonDecode(response.body);
+    return tournamentsJson.map((json) => Tournament.fromJson(json)).toList();
+  } else {
+    throw Exception('Error al obtener torneos');
+  }
+}
 } 

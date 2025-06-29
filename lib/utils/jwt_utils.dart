@@ -15,4 +15,18 @@ class JwtUtils {
       return null;
     }
   }
+
+  static String? getUserTypeFromToken(String token) {
+  try {
+    Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+    if (decodedToken.containsKey('userType')) {
+      return decodedToken['userType'].toString();
+    }
+    return null;
+  } catch (e) {
+    print('Error decodificando el token: $e');
+    return null;
+  }
+}
+
 }
