@@ -79,7 +79,6 @@ class AuthService {
         }
       }
       
-      // Siempre eliminar token localmente (incluso si falla el backend)
       await removeToken();
       print('Token eliminado localmente');
       
@@ -87,7 +86,6 @@ class AuthService {
       
     } catch (e) {
       print('Error en logout: $e');
-      // Aún así eliminar token localmente
       await removeToken();
       return false;
     }

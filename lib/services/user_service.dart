@@ -87,7 +87,6 @@ class UserService {
     }
   }
 
-  // NUEVO: Método de logout con llamada al backend
   static Future<bool> logout(String token) async {
     try {
       final response = await http.post(

@@ -213,7 +213,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       setState(() {
         if (isRegistrationStart) {
           _registrationStartDate = picked;
-          // Si la fecha de fin de registro es anterior a la nueva fecha de inicio, la limpiamos
+          // Si la fecha de fin de registro es anterior a la nueva fecha de inicio, la limpio
           if (_registrationEndDate != null && _registrationEndDate!.isBefore(picked)) {
             _registrationEndDate = null;
           }
@@ -247,7 +247,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       setState(() {
         if (isStart) {
           _tournamentStartDate = picked;
-          // Si la fecha de fin del torneo es anterior a la nueva fecha de inicio, la limpiamos
+          // Si la fecha de fin del torneo es anterior a la nueva fecha de inicio, la limpio
           if (_tournamentEndDate != null && _tournamentEndDate!.isBefore(picked)) {
             _tournamentEndDate = null;
           }
