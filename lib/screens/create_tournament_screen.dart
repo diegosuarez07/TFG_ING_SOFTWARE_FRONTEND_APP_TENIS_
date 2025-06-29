@@ -52,6 +52,144 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     }
   }
 
+  // Validación de fechas de registro
+  bool _validateRegistrationDates() {
+    if (_registrationStartDate != null && _registrationEndDate != null) {
+      if (_registrationEndDate!.isBefore(_registrationStartDate!)) {
+        _showDateErrorDialog(
+          'Error en Fechas de Registro',
+          'La fecha de fin de registro no puede ser anterior a la fecha de inicio de registro.',
+          'Por favor, selecciona una fecha de fin posterior o igual a la fecha de inicio.'
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Validación de fechas del torneo
+  bool _validateTournamentDates() {
+    if (_tournamentStartDate != null && _tournamentEndDate != null) {
+      if (_tournamentEndDate!.isBefore(_tournamentStartDate!)) {
+        _showDateErrorDialog(
+          'Error en Fechas del Torneo',
+          'La fecha de fin del torneo no puede ser anterior a la fecha de inicio del torneo.',
+          'Por favor, selecciona una fecha de fin posterior o igual a la fecha de inicio.'
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Validación de que las fechas del torneo sean posteriores a las de registro
+  bool _validateTournamentAfterRegistration() {
+    if (_registrationEndDate != null && _tournamentStartDate != null) {
+      if (_tournamentStartDate!.isBefore(_registrationEndDate!)) {
+        _showDateErrorDialog(
+          'Error en Fechas',
+          'El torneo debe comenzar después del período de registro.',
+          'La fecha de inicio del torneo debe ser posterior a la fecha de fin de registro.'
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Diálogo elegante de error de fechas
+  void _showDateErrorDialog(String title, String message, String suggestion) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.calendar_today, color: Colors.red[700], size: 30),
+              ),
+              SizedBox(width: 15),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.red[700],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[800],
+                ),
+              ),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.lightbulb_outline, color: Colors.blue[700], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        suggestion,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.blue[700],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.red[50],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'Entendido',
+                style: TextStyle(
+                  color: Colors.red[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _selectDate(BuildContext context, bool isRegistrationStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -75,6 +213,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       setState(() {
         if (isRegistrationStart) {
           _registrationStartDate = picked;
+          // Si la fecha de fin de registro es anterior a la nueva fecha de inicio, la limpiamos
+          if (_registrationEndDate != null && _registrationEndDate!.isBefore(picked)) {
+            _registrationEndDate = null;
+          }
         } else {
           _registrationEndDate = picked;
         }
@@ -105,6 +247,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       setState(() {
         if (isStart) {
           _tournamentStartDate = picked;
+          // Si la fecha de fin del torneo es anterior a la nueva fecha de inicio, la limpiamos
+          if (_tournamentEndDate != null && _tournamentEndDate!.isBefore(picked)) {
+            _tournamentEndDate = null;
+          }
         } else {
           _tournamentEndDate = picked;
         }
@@ -114,6 +260,19 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
 
   Future<void> _createTournament() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Validaciones de fechas
+    if (!_validateRegistrationDates()) return;
+    if (!_validateTournamentDates()) return;
+    if (!_validateTournamentAfterRegistration()) return;
+    
+    // Validar que todas las fechas estén seleccionadas
+    if (_registrationStartDate == null || _registrationEndDate == null || 
+        _tournamentStartDate == null || _tournamentEndDate == null) {
+      _showErrorDialog('Fechas Incompletas', 'Por favor, selecciona todas las fechas requeridas.');
+      return;
+    }
+    
     if (_userId == null) {
       _showErrorDialog('Error', 'No se pudo obtener el ID del usuario');
       return;
@@ -533,4 +692,4 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     _maxPlayersController.dispose();
     super.dispose();
   }
-} 
+}
