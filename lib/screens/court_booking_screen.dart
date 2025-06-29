@@ -3,6 +3,9 @@ import '../models/timeslot_response.dart';
 import '../models/court.dart';
 import '../services/timeslot_service.dart';
 import '../services/court_service.dart';
+import '../services/auth_service.dart';
+import '../services/court_booking_service.dart';
+import '../utils/jwt_utils.dart';
 
 class CourtBookingScreen extends StatefulWidget {
   @override
@@ -26,23 +29,28 @@ class _CourtBookingScreenState extends State<CourtBookingScreen> {
   }
 
   Future<void> _fetchCourtsAndTimeslots() async {
-    try {
-      final courts = await CourtService.getCourts();
-      final timeslots = await TimeslotService.getAvailableTimeslots();
-      setState(() {
-        _courts = courts;
-        _allTimeslots = timeslots;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar datos')),
-      );
-    }
+  try {
+    print('Cargando canchas...');
+    final courts = await CourtService.getCourts();
+    print('Canchas cargadas: ${courts.length}');
+    print('Cargando timeslots...');
+    final timeslots = await TimeslotService.getAvailableTimeslots();
+    print('Timeslots cargados: ${timeslots.length}');
+    setState(() {
+      _courts = courts;
+      _allTimeslots = timeslots;
+      _isLoading = false;
+    });
+  } catch (e) {
+    print('Error al cargar datos: $e');
+    setState(() {
+      _isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al cargar datos')),
+    );
   }
+}
 
   void _onCourtSelected(Court? court) {
     setState(() {
@@ -54,7 +62,7 @@ class _CourtBookingScreenState extends State<CourtBookingScreen> {
     });
   }
 
-  void _onReserve() {
+  Future<void> _onReserve() async {
     if (_selectedCourt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Seleccione una cancha')),
@@ -67,14 +75,95 @@ class _CourtBookingScreenState extends State<CourtBookingScreen> {
       );
       return;
     }
-    // Aquí iría la lógica para reservar (POST al backend)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Reserva realizada para N°${_selectedCourt!.courtNumber} - ${_selectedCourt!.courtName} (${_selectedCourt!.surfaceType}) de ${_selectedTimeslot!.startTime} a ${_selectedTimeslot!.endTime}',
-        ),
-      ),
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Recupera el token y el userId
+    String? token = await AuthService.getToken();
+    if (token == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se encontró token de sesión')),
+      );
+      return;
+    }
+    int? userId = JwtUtils.getUserIdFromToken(token);
+    if (userId == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo obtener el usuario logueado')),
+      );
+      return;
+    }
+
+    bool success = await CourtBookingService.createBooking(
+      userId: userId,
+      timeslotId: int.parse(_selectedTimeslot!.timeslotId.toString()),
     );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (success) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 32),
+              SizedBox(width: 8),
+              Text('¡Reserva exitosa!'),
+            ],
+          ),
+          content: Text(
+            'Reserva realizada para:\n'
+            'N°${_selectedCourt!.courtNumber} - ${_selectedCourt!.courtName} (${_selectedCourt!.surfaceType})\n'
+            'Horario: ${_selectedTimeslot!.date} de ${_selectedTimeslot!.startTime} a ${_selectedTimeslot!.endTime}',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedCourt = null;
+                  _selectedTimeslot = null;
+                  _filteredTimeslots = [];
+                });
+              },
+              child: Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red, size: 32),
+              SizedBox(width: 8),
+              Text('Error'),
+            ],
+          ),
+          content: Text('Error al realizar la reserva. Intente nuevamente.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -113,7 +202,7 @@ class _CourtBookingScreenState extends State<CourtBookingScreen> {
                       return DropdownMenuItem<Court>(
                         value: court,
                         child: Container(
-                          width: 220, // Ajusta el ancho según tu diseño
+                          width: 220,
                           child: Text(
                             'N°${court.courtNumber} - ${court.courtName} (${court.surfaceType}) [${court.status}]',
                             overflow: TextOverflow.ellipsis,
@@ -144,7 +233,7 @@ class _CourtBookingScreenState extends State<CourtBookingScreen> {
                 return DropdownMenuItem<TimeslotResponse>(
                   value: ts,
                   child: Container(
-                    width: 220, // Ajusta el ancho según tu diseño
+                    width: 220,
                     child: Text(
                       '${ts.date} - ${ts.startTime} a ${ts.endTime}',
                       overflow: TextOverflow.ellipsis,
